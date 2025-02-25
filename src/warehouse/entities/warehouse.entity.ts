@@ -1,20 +1,28 @@
-
 import { Entity, Column, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class warehouse {
-  @PrimaryColumn()
+  @PrimaryColumn({ default: '' })
   id: string;
 
-  @Column()
+  @Column({ default: '' })
   name: string;
 
-  @Column()
+  @Column({ default: '' })
   quantity: string;
 
-  @Column()
+  @Column({ default: '' })
   inventory: string;
 
-  @Column()
+  @Column({ default: '' })
   comment: string;
+
+  @Column({ nullable: false, default: '' })
+  countryCode: string;
+
+  @Column('json', { default: {} })
+  serviceCategory: {
+    serviceName: string;
+    priceInEuroWithoutVAT: number;
+  };
 }

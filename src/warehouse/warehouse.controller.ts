@@ -17,7 +17,7 @@ export class WarehouseController {
         return this.warehouseService.create(data)
     }
 
-    @Post('delete')
+    @Post('delete/:id')
     delete(@Param('id') id: string){
         return this.warehouseService.deleteById(id)
     }
@@ -30,5 +30,15 @@ export class WarehouseController {
     @Get()
     async getAllWarehouses() {
         return this.warehouseService.findAll();
+    }
+
+    @Get('history/:id')
+    async getWarehouseHistory(@Param('id') id: string) {
+        return this.warehouseService.getHistory(id);
+    }
+
+    @Get('history')
+    async getAllWarehouseHistory() {
+        return this.warehouseService.getAllHistory();
     }
 }

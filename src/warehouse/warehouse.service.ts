@@ -2,50 +2,61 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { warehouse } from './entities/warehouse.entity';
+import { WarehouseHistory } from './entities/warehouseHistory.entity';
 import { CreateWareHourehDto } from './dto/create-wareHoure.dto';
 import generateRandomId from 'src/methods/generateRandomId';
+
 @Injectable()
 export class WarehouseService {
     constructor(
         @InjectRepository(warehouse)
         private readonly warehouseModule: Repository<warehouse>,
+        @InjectRepository(WarehouseHistory)
+        private readonly warehouseHistoryRepository: Repository<WarehouseHistory>,
     ){}
 
-    async create(data: CreateWareHourehDto){
-
-        if (!data.name || !data.quantity || !data.inventory || !data.comment) {
-            return {
-              code: 400,
-              message: 'Not all arguments',
-            };
+    async create(data: CreateWareHourehDto) {
+        if (!data.name || !data.quantity || !data.inventory || !data.comment || !data.countryCode || !data.serviceCategory) {
+          return {
+            code: 400,
+            message: 'Not all arguments',
+          };
         }
-
+    
         try {
-            const generateId = generateRandomId();
-
-            const result = await this.warehouseModule.save(
-                this.warehouseModule.create({
-                    id: generateId,
-                    name: data.name,
-                    quantity: data.quantity,
-                    inventory: data.inventory,
-                    comment: data.comment
-                })
-            );
-
-            return {
-                code: 201,
-                data: result,
-            };
-
-            
+          const generateId = generateRandomId();
+    
+          const result = await this.warehouseModule.save(
+            this.warehouseModule.create({
+              id: generateId,
+              name: data.name,
+              quantity: data.quantity,
+              inventory: data.inventory,
+              comment: data.comment,
+              countryCode: data.countryCode,
+              serviceCategory: data.serviceCategory,
+            })
+          );
+    
+          await this.warehouseHistoryRepository.save(
+            this.warehouseHistoryRepository.create({
+              warehouseId: generateId,
+              action: 'create',
+              data: result,
+            })
+          );
+    
+          return {
+            code: 201,
+            data: result,
+          };
         } catch (err) {
-            return {
-              code: 500,
-              message: err,
-            };
-          }
-    }
+          return {
+            code: 500,
+            message: err,
+          };
+        }
+      }
 
     async deleteById(id: string) {
         if (!id) {
@@ -56,14 +67,24 @@ export class WarehouseService {
         }
 
         try {
-            const deleteResult = await this.warehouseModule.delete(id);
+            const warehouse = await this.warehouseModule.findOne({ where: { id } });
 
-            if (deleteResult.affected === 0) {
+            if (!warehouse) {
                 return {
                     code: 404,
                     message: 'Warehouse not found',
                 };
             }
+
+            await this.warehouseModule.delete(id);
+
+            await this.warehouseHistoryRepository.save(
+                this.warehouseHistoryRepository.create({
+                    warehouseId: id,
+                    action: 'delete',
+                    data: warehouse,
+                })
+            );
 
             return {
                 code: 200,
@@ -72,7 +93,7 @@ export class WarehouseService {
         } catch (err) {
             return {
                 code: 500,
-                message: err|| 'Internal server error',
+                message: err || 'Internal server error',
             };
         }
     }
@@ -99,6 +120,14 @@ export class WarehouseService {
 
             const updatedWarehouse = await this.warehouseModule.save(warehouse);
 
+            await this.warehouseHistoryRepository.save(
+                this.warehouseHistoryRepository.create({
+                    warehouseId: id,
+                    action: 'update',
+                    data: updatedWarehouse,
+                })
+            );
+
             return {
                 code: 200,
                 message: 'Warehouse updated successfully',
@@ -118,6 +147,43 @@ export class WarehouseService {
             return {
                 code: 200,
                 data: warehouses,
+            };
+        } catch (err) {
+            return {
+                code: 500,
+                message: err instanceof Error ? err.message : 'Internal server error',
+            };
+        }
+    }
+
+    async getHistory(warehouseId: string) {
+        if (!warehouseId) {
+            return {
+                code: 400,
+                message: 'Warehouse ID is required',
+            };
+        }
+
+        try {
+            const history = await this.warehouseHistoryRepository.find({ where: { warehouseId } });
+            return {
+                code: 200,
+                data: history,
+            };
+        } catch (err) {
+            return {
+                code: 500,
+                message: err instanceof Error ? err.message : 'Internal server error',
+            };
+        }
+    }
+
+    async getAllHistory() {
+        try {
+            const history = await this.warehouseHistoryRepository.find();
+            return {
+                code: 200,
+                data: history,
             };
         } catch (err) {
             return {

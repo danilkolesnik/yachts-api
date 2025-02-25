@@ -106,7 +106,6 @@ export class AuthService {
 
     async verify(req: Request) {
       const token = getBearerToken(req);
-  
       try {
         if (!token) {
           return {

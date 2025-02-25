@@ -5,10 +5,14 @@ import { AuthModule } from './auth/auth.module';
 import { WarehouseModule } from './warehouse/warehouse.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-// import { users } from './auth/entities/users.entity';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TasksModule } from './tasks/tasks.module';
+import { OfferModule } from './offer/offer.module';
+import { PriceListModule } from './price-list/price-list.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({isGlobal:true}),
     TypeOrmModule.forRootAsync({
       imports:[ConfigModule],
@@ -24,9 +28,11 @@ import { ConfigModule } from '@nestjs/config';
       })
     }),
     AuthModule, 
-    WarehouseModule
+    WarehouseModule, 
+    TasksModule, 
+    OfferModule, PriceListModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,],
 })
 export class AppModule {}
