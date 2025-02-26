@@ -9,6 +9,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TasksModule } from './tasks/tasks.module';
 import { OfferModule } from './offer/offer.module';
 import { PriceListModule } from './price-list/price-list.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { PriceListModule } from './price-list/price-list.module';
     AuthModule, 
     WarehouseModule, 
     TasksModule, 
-    OfferModule, PriceListModule
+    OfferModule, PriceListModule, UsersModule
   ],
   controllers: [AppController],
   providers: [AppService,],

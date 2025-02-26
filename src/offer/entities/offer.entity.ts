@@ -1,13 +1,15 @@
-
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, CreateDateColumn } from 'typeorm';
 
 @Entity()
 export class offer {
-  @PrimaryColumn({default: ''})
+  @PrimaryColumn()
   id: string;
 
   @Column({default: ''})
   customer: string;
+
+  @Column({default: ''})
+  customerFullName: string;
 
   @Column({default: ''})
   yachtName: string;
@@ -15,9 +17,24 @@ export class offer {
   @Column({default: ''})
   yachtModel: string;
 
-  @Column({default: ''})
+  @Column({ default: '' })
   comment: string;
 
-  @Column({ nullable: false, default: '' })
-  countryCode: string;  
+  @Column({default: ''})
+  countryCode: string;
+
+  @Column('json', { default: [] })
+  services: { serviceName: string; priceInEuroWithoutVAT: number }[];
+
+  @Column('json', { default: [] })
+  parts: { partName: string; quantity: number }[];
+
+  @Column({ default: 'created' })
+  status: string;
+
+  @Column('json', { default: [] })
+  versions: any[];
+
+  @CreateDateColumn()
+  createdAt: Date;
 }

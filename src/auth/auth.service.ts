@@ -43,6 +43,7 @@ export class AuthService {
             this.usersModule.create({
               id: generateId,
               email: data.email,
+              fullName: data.fullName,
               password: bcrypt.hashSync(data.password),
             }),
           );
@@ -113,6 +114,7 @@ export class AuthService {
             message: 'Not all arguments',
           };
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         const login = jwt.verify(token, process.env.SECRET_KEY);
         const checkUser = await this.usersModule.findOne({
           where: {

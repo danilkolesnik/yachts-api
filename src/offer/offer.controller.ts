@@ -1,17 +1,23 @@
-import { 
-    Controller,
-    Body,
-    Post
-} from '@nestjs/common';
-import { CreateOfferhDto } from './dto/create-offer.dto';
+import { Controller, Post, Put, Body, Param,Get } from '@nestjs/common';
 import { OfferService } from './offer.service';
+import { CreateOfferhDto } from './dto/create-offer.dto';
 
 @Controller('offer')
 export class OfferController {
-    constructor(private readonly offerService:OfferService){}
+  constructor(private readonly offerService: OfferService) {}
 
-    @Post('create')
-    create(@Body() data: CreateOfferhDto){
-        return this.offerService.create(data)
-    }
+  @Post('create')
+  async createOffer(@Body() data: CreateOfferhDto) {
+    return this.offerService.create(data);
+  }
+
+  @Put('update/:id')
+  async updateOffer(@Param('id') id: string, @Body() data: Partial<CreateOfferhDto>) {
+    return this.offerService.update(id, data);
+  }
+
+  @Get()
+  async getAllOffers() {
+    return this.offerService.findAll();
+  }
 }
