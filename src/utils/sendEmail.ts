@@ -3,33 +3,34 @@ import * as nodemailer from 'nodemailer';
 export async function sendEmail(to: string, subject: string, text: string, html?: string, pdfFilePath?: string) {
 
   const transporter = nodemailer.createTransport({
-    host: 'smtp.example.com', 
+    host: 'smtp-mail.outlook.com', 
     port: 587, 
     secure: false,
     auth: {
-      user: 'your-email@example.com',
+      user: 'outlook_91A721DC25DF8FF7@outlook.com',
       pass: 'your-email-password',
     },
+    tls: {
+      ciphers: 'SSLv3'
+    }
   });
 
-  // Set up email data
   const mailOptions: nodemailer.SendMailOptions = {
-    from: '"Your Name" <your-email@example.com>', // Replace with your name and email
+    from: '"Your Name" <outlook_91A721DC25DF8FF7@outlook.com>',
     to,
     subject,
     text,
-    html, // Optional: HTML version of the message
+    html,
     attachments: pdfFilePath ? [
       {
-        filename: 'attachment.pdf', // You can customize the filename
-        path: pdfFilePath, // Path to the PDF file
+        filename: 'attachment.pdf',
+        path: pdfFilePath,
         contentType: 'application/pdf'
       }
     ] : []
   };
 
   try {
-    // Send mail with defined transport object
     const info = await transporter.sendMail(mailOptions);
     console.log('Message sent: %s', info.messageId);
     return {

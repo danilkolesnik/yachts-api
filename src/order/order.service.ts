@@ -5,7 +5,6 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { offer } from 'src/offer/entities/offer.entity';
 import { users } from 'src/auth/entities/users.entity';
 import { order } from './entities/order.entity';
-
 @Injectable()
 export class OrderService {
   constructor(
@@ -18,6 +17,7 @@ export class OrderService {
   ) {}
 
   async create(data: CreateOrderDto) {
+
     if (!data.offerId || !data.userId || !data.customerId) {
       return {
         code: 400,
@@ -36,9 +36,10 @@ export class OrderService {
         };
       }
 
+      const userIds = data.userId.map((user) => user.value);
 
       const assignedWorkers = await this.usersRepository.find({
-        where: { id: In(data.userId) },
+        where: { id: In(userIds) },
       });
 
       if (assignedWorkers.length !== data.userId.length) {
@@ -53,9 +54,9 @@ export class OrderService {
       const newOrder = await this.orderRepository.save(
         this.orderRepository.create({
           offerId: data.offerId,
-          assignedWorkers,
+          assignedWorkers: assignedWorkers,
           customerId: data.customerId,
-          status: data.status,
+          status: 'created',
         })
       );
 
@@ -63,6 +64,7 @@ export class OrderService {
         code: 201,
         data: newOrder,
       };
+
     } catch (err) {
       return {
         code: 500,
