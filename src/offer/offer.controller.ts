@@ -16,6 +16,17 @@ export class OfferController {
     return this.offerService.update(id, data);
   }
 
+  @Post('delete/:id')
+  async deleteOffer(@Param('id') id: string) {
+    return this.offerService.delete(id);
+  }
+
+  @Get('history')
+  async getOfferHistory() {
+    return this.offerService.getOfferHistory();
+  }
+
+
   @Get()
   async getAllOffers() {
     return this.offerService.findAll();

@@ -1,5 +1,7 @@
 export class CreateOfferhDto {
+    userId: string;
     customerFullName: string;
+    customerId: string;
     yachtName: string;
     yachtModel: string;
     comment?: string;

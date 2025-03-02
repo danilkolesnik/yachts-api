@@ -2,7 +2,9 @@ import {
     Controller,
     Post,
     Body,
-    Req
+    Req,
+    Put,
+    Param
  } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
@@ -27,5 +29,14 @@ export class AuthController {
     @Post('verify')
     verifyClient(@Req() request: Request) {
       return this.authService.verify(request);
+    }
+
+    @Put(':id/password')
+    async changePassword(
+      @Param('id') id: string,
+      @Body('currentPassword') currentPassword: string,
+      @Body('newPassword') newPassword: string,
+    ) {
+      return this.authService.changePassword(id, currentPassword, newPassword);
     }
 }

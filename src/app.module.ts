@@ -10,6 +10,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { OfferModule } from './offer/offer.module';
 import { PriceListModule } from './price-list/price-list.module';
 import { UsersModule } from './users/users.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { UsersModule } from './users/users.module';
     AuthModule, 
     WarehouseModule, 
     TasksModule, 
-    OfferModule, PriceListModule, UsersModule
+    OfferModule, PriceListModule, UsersModule, OrderModule
   ],
   controllers: [AppController],
   providers: [AppService,],

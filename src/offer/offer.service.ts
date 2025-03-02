@@ -5,6 +5,8 @@ import { offer } from './entities/offer.entity';
 import { CreateOfferhDto } from './dto/create-offer.dto';
 import generateRandomId from 'src/methods/generateRandomId';
 import { users } from 'src/auth/entities/users.entity';
+import { OfferHistory } from './entities/offer-history.entity';
+import { isEqual } from 'lodash';
 
 @Injectable()
 export class OfferService {
@@ -13,6 +15,8 @@ export class OfferService {
     private readonly offerRepository: Repository<offer>,
     @InjectRepository(users)
     private readonly usersRepository: Repository<users>,
+    @InjectRepository(OfferHistory)
+    private readonly offerHistoryRepository: Repository<OfferHistory>,
   ) {}
 
   async create(data: CreateOfferhDto) {
@@ -38,6 +42,7 @@ export class OfferService {
         this.offerRepository.create({
           id: generateId,
           customerFullName: customer.fullName,
+          customerId: customer.id,
           yachtName: data.yachtName,
           yachtModel: data.yachtModel,
           comment: data.comment || '',
@@ -73,8 +78,37 @@ export class OfferService {
         };
       }
 
+      const offerCopy = { ...offer, versions: undefined };
+
+      const changedFields = {};
+      for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+          const oldValue: any = offer[key];
+          const newValue: any = data[key];
+
+          if (typeof oldValue === 'object' && typeof newValue === 'object') {
+            if (!isEqual(oldValue, newValue)) {
+              changedFields[key] = { oldValue, newValue };
+            }
+          } else if (oldValue !== newValue) {
+            changedFields[key] = { oldValue, newValue };
+          }
+        }
+      }
+
       const updatedOffer = Object.assign(offer, data);
-      updatedOffer.versions.push({ ...offer });
+      updatedOffer.versions.push(offerCopy);
+
+      if (Object.keys(changedFields).length > 0) {
+        await this.offerHistoryRepository.save(
+          this.offerHistoryRepository.create({
+            offerId: id,
+            userId: data.userId,
+            changeDate: new Date(),
+            changeDescription: JSON.stringify(changedFields),
+          })
+        );
+      }
 
       const result = await this.offerRepository.save(updatedOffer);
 
@@ -83,6 +117,7 @@ export class OfferService {
         data: result,
       };
     } catch (err) {
+      console.log(err);
       return {
         code: 500,
         message: err,
@@ -96,6 +131,61 @@ export class OfferService {
       return {
         code: 200,
         data: offers,
+      };
+    } catch (err) {
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  async getOfferHistory() {
+    try {
+      const offerHistory = await this.offerHistoryRepository.find();
+
+      const historyWithUserDetails = await Promise.all(
+        offerHistory.map(async (history) => {
+          const user = await this.usersRepository.findOne({
+            where: { id: history.userId },
+          });
+
+          return {
+            ...history,
+            user: user ? { id: user.id, fullName: user.fullName } : null,
+          };
+        })
+      );
+
+      return {
+        code: 200,
+        data: historyWithUserDetails,
+      };
+    } catch (err) {
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  
+  async delete(id: string) {
+    try {
+      const offer = await this.offerRepository.findOne({ where: { id } });
+
+      if (!offer) {
+        return {
+          code: 404,
+          message: 'Offer not found',
+        };
+      }
+
+      await this.offerRepository.delete(id);
+
+      return {
+        code: 200,
+        message: 'Offer deleted successfully',
       };
     } catch (err) {
       return {

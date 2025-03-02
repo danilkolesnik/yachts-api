@@ -6,7 +6,7 @@ export class offer {
   id: string;
 
   @Column({default: ''})
-  customer: string;
+  customerId: string;
 
   @Column({default: ''})
   customerFullName: string;

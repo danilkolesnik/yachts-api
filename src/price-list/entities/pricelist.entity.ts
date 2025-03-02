@@ -10,4 +10,7 @@ export class Pricelist {
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   priceInEuroWithoutVAT: number;
+
+  @Column({ default: '' })
+  unitsOfMeasurement: string;
 }

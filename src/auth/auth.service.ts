@@ -10,6 +10,7 @@ import getBearerToken from 'src/methods/getBearerToken';
 
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
+import { JwtPayload } from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
@@ -83,12 +84,14 @@ export class AuthService {
         }
   
         if (bcrypt.compareSync(data.password, checkUser.password)) {
+          const token = jwt.sign(
+            { id: checkUser.id, role: checkUser.role },
+            process.env.SECRET_KEY as string
+          );
+
           return {
             code: 200,
-            token: jwt.sign(
-              { id: checkUser.id, role: checkUser.role },
-              process.env.SECRET_KEY,
-            ),
+            token: token,
           };
         } else {
           return {
@@ -114,8 +117,15 @@ export class AuthService {
             message: 'Not all arguments',
           };
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-        const login = jwt.verify(token, process.env.SECRET_KEY);
+        const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+
+        if (!login || typeof login !== 'object' || !('id' in login)) {
+          return {
+            code: 400,
+            message: 'Invalid token',
+          };
+        }
+
         const checkUser = await this.usersModule.findOne({
           where: {
             id: login.id,
@@ -137,6 +147,45 @@ export class AuthService {
         return {
           code: 500,
           message: err,
+        };
+      }
+    }
+
+    async changePassword(userId: string, currentPassword: string, newPassword: string) {
+      try {
+        const user = await this.usersModule.findOne({ where: { id: userId } });
+
+        if (!user) {
+          return {
+            code: 404,
+            message: 'User not found',
+          };
+        }
+
+        // Verify current password
+        const isMatch = bcrypt.compareSync(currentPassword, user.password);
+        if (!isMatch) {
+          return {
+            code: 400,
+            message: 'Current password is incorrect',
+          };
+        }
+
+        // Hash the new password
+        const hashedPassword = bcrypt.hashSync(newPassword, 10);
+
+        // Update the user's password
+        user.password = hashedPassword;
+        await this.usersModule.save(user);
+
+        return {
+          code: 200,
+          message: 'Password updated successfully',
+        };
+      } catch (err) {
+        return {
+          code: 500,
+          message: err instanceof Error ? err.message : 'Internal server error',
         };
       }
     }

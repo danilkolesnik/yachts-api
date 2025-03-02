@@ -1,8 +1,7 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
+import { Repository } from 'typeorm';
 import { users } from 'src/auth/entities/users.entity';
-import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class UsersService {
@@ -13,9 +12,7 @@ export class UsersService {
 
   async allUsers() {
     try {
-      const allUsers = await this.usersRepository.find({
-        where: { role: Not('admin') },
-      });
+      const allUsers = await this.usersRepository.find();
       return {
         code: 200,
         data: allUsers,
@@ -45,16 +42,9 @@ export class UsersService {
     }
   }
 
-  async updateUserRole(id: string, newRole: string, token: string) {
+  async updateUserRole(id: string, newRole: string) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      const decodedToken = jwt.verify(token, process.env.SECRET_KEY) as { id: string, role: string };
-      const adminUser = await this.usersRepository.findOne({ where: { id: decodedToken.id } });
-
-      if (!adminUser || adminUser.role !== 'admin') {
-        throw new UnauthorizedException('Only admin users can change roles');
-      }
-
+      // Directly find the user by the provided id
       const user = await this.usersRepository.findOne({ where: { id } });
 
       if (!user) {

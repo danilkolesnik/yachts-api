@@ -24,6 +24,7 @@ export class PricelistService {
         this.pricelistRepository.create({
           serviceName: data.serviceName,
           priceInEuroWithoutVAT: data.priceInEuroWithoutVAT,
+          unitsOfMeasurement: data.unitsOfMeasurement,
         })
       );
 

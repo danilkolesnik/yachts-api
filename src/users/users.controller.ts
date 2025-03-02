@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Param, Body, Headers } from '@nestjs/common';
+import { Controller, Get, Put, Param, Body } from '@nestjs/common';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -19,8 +19,7 @@ export class UsersController {
   async updateUserRole(
     @Param('id') id: string,
     @Body('role') newRole: string,
-    @Headers('authorization') token: string,
   ) {
-    return this.usersService.updateUserRole(id, newRole, token);
+    return this.usersService.updateUserRole(id, newRole);
   }
 }
