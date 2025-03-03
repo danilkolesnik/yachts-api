@@ -49,8 +49,6 @@ export class OrderService {
         };                   
       }
 
-      
-
       const newOrder = await this.orderRepository.save(
         this.orderRepository.create({
           offerId: data.offerId,
@@ -81,7 +79,7 @@ export class OrderService {
 
       if (!user) {
         return {
-          code: 404,
+          code: 404, 
           message: 'User not found',
         };
       }
@@ -148,6 +146,62 @@ export class OrderService {
       return {
         code: 200,
         data: { ...order, offer },
+      };
+    } catch (err) {
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  async updateOrderStatus(orderId: string, newStatus: string) {
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id: orderId },
+      });
+
+      if (!order) {
+        return {
+          code: 404,
+          message: 'Order not found',
+        };
+      }
+
+      order.status = newStatus;
+      await this.orderRepository.save(order);
+
+      return {
+        code: 200,
+        message: 'Order status updated successfully',
+        data: order,
+      };
+    } catch (err) {
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  async deleteOrder(orderId: string) {
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id: orderId },
+      });
+
+      if (!order) {
+        return {
+          code: 404,
+          message: 'Order not found',
+        };
+      }
+
+      await this.orderRepository.remove(order);
+
+      return {
+        code: 200,
+        message: 'Order deleted successfully',
       };
     } catch (err) {
       return {
