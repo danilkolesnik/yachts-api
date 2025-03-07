@@ -1,10 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository,In } from 'typeorm';
+import { Request } from 'express';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { offer } from 'src/offer/entities/offer.entity';
 import { users } from 'src/auth/entities/users.entity';
 import { order } from './entities/order.entity';
+import getBearerToken from 'src/methods/getBearerToken';
+
+import { JwtPayload } from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
+
 @Injectable()
 export class OrderService {
   constructor(
@@ -71,36 +77,19 @@ export class OrderService {
     }
   }
 
-  async allOrder(userId: string) {
-    try {
-      const user = await this.usersRepository.findOne({
-        where: { id: userId },
-      });
+  async allOrder(req: Request) {
 
-      if (!user) {
-        return {
-          code: 404, 
-          message: 'User not found',
-        };
-      }
-
-      let orders: order[];
-      if (user.role === 'admin') {
-
-        orders = await this.orderRepository.find({
-          relations: ['assignedWorkers'],
-          order: { createdAt: 'DESC' }, 
-        });
-      } else {
+    const token = getBearerToken(req);
   
-        orders = await this.orderRepository
-          .createQueryBuilder('order')
-          .leftJoinAndSelect('order.assignedWorkers', 'worker')
-          .where('worker.id = :userId', { userId })
-          .orderBy('order.createdAt', 'DESC')
-          .getMany();
-      }
+    try {
 
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+
+      const orders = await this.orderRepository.find({
+        relations: ['assignedWorkers'],
+        order: { createdAt: 'DESC' },
+      });
+  
       const ordersWithOffers = await Promise.all(
         orders.map(async (order) => {
           const offer = await this.offerRepository.findOne({
@@ -111,11 +100,35 @@ export class OrderService {
             offer,
           };
         })
-      );
+      ) as any[];
+  
+      const userRoles = ['mechanic', 'electrician'];
+
+      let filteredOrders = ordersWithOffers;
+
+      if (login.role === 'admin') {
+        filteredOrders = ordersWithOffers;
+        /* eslint-disable @typescript-eslint/no-unsafe-argument */
+      } else if (userRoles.includes(login.role)) {
+        filteredOrders = ordersWithOffers.filter(order =>
+          order.assignedWorkers.some((worker: any) => String(worker.id) === String(login.id))
+        );
+      } else if (login.role === 'user') {
+        filteredOrders = ordersWithOffers.filter(order =>
+          String(order.customerId) === String(login.id)
+        );
+      } else {
+        return {
+          code: 403,
+          message: 'Access denied',
+        };
+      }
+
+      filteredOrders = ordersWithOffers;
 
       return {
         code: 200,
-        data: ordersWithOffers,
+        data: filteredOrders,
       };
     } catch (err) {
       return {
