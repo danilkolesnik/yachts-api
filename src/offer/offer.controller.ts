@@ -26,6 +26,10 @@ export class OfferController {
     return this.offerService.getOfferHistory();
   }
 
+  @Get(':id')
+  async getOfferById(@Param('id') id: string) {
+    return this.offerService.getOfferById(id);
+  }
 
   @Get()
   async getAllOffers() {

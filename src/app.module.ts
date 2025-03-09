@@ -11,13 +11,23 @@ import { OfferModule } from './offer/offer.module';
 import { PriceListModule } from './price-list/price-list.module';
 import { UsersModule } from './users/users.module';
 import { OrderModule } from './order/order.module';
+import { UploadModule } from './upload/upload.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({isGlobal:true}),
     TypeOrmModule.forRootAsync({
-      imports:[ConfigModule],
+      imports:[
+        ConfigModule,
+        ServeStaticModule.forRoot({
+          rootPath: join(__dirname, '..', 'uploads'),
+          serveRoot: '/uploads', 
+        }),
+
+      ],
       useFactory:() =>({
         type:"postgres",
         host:"localhost",
@@ -32,7 +42,11 @@ import { OrderModule } from './order/order.module';
     AuthModule, 
     WarehouseModule, 
     TasksModule, 
-    OfferModule, PriceListModule, UsersModule, OrderModule
+    OfferModule, 
+    PriceListModule, 
+    UsersModule, 
+    OrderModule, 
+    UploadModule
   ],
   controllers: [AppController],
   providers: [AppService,],

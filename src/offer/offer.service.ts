@@ -168,7 +168,6 @@ export class OfferService {
       };
     }
   }
-
   
   async delete(id: string) {
     try {
@@ -186,6 +185,21 @@ export class OfferService {
       return {
         code: 200,
         message: 'Offer deleted successfully',
+      };
+    } catch (err) {
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  async getOfferById(id: string) {
+    try {
+      const offer = await this.offerRepository.findOne({ where: { id } });
+      return {
+        code: 200,
+        data: offer,  
       };
     } catch (err) {
       return {

@@ -35,6 +35,12 @@ export class offer {
   @Column('json', { default: [] })
   versions: any[];
 
+  @Column('json', { nullable: true, default: [] })
+  imageUrls: string[];
+
+  @Column('json', { nullable: true, default: [] })
+  videoUrls: string[];
+
   @CreateDateColumn()
   createdAt: Date;
 }
