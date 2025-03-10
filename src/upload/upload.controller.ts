@@ -91,7 +91,7 @@ export class UploadController {
       folder = 'uploads/video';
     }
 
-    const fileUrl = `http://localhost:3002/${folder}/${file.filename}`;
+    const fileUrl = `https://yachts-04397ed45b09.herokuapp.com/${folder}/${file.filename}`;
 
     offer.imageUrls = offer.imageUrls ? [...offer.imageUrls, fileUrl] : [fileUrl];
     await this.offerRepository.save(offer);
@@ -115,7 +115,7 @@ export class UploadController {
       return { message: 'Файл не найден.' };
     }
 
-    const fileUrl = `http://localhost:3000/uploads/${file.filename}`;
+    const fileUrl = `https://yachts-04397ed45b09.herokuapp.com/uploads/${file.filename}`;
 
     return {
       id: file.id,
