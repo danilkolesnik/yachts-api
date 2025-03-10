@@ -18,26 +18,29 @@ export class UploadController {
   ) {}
 
   @Post('delete')
-  async deleteFile(@Body('url') url: string) {
-    console.log('Received URL:', url); // Логирование URL
+  async deleteFile(@Body() body: { url: string; offerId: string }) {
+    const { url, offerId } = body;
+    console.log(url, offerId);
     try {
-      // Извлекаем имя файла из URL
       const filename = url.split('/').pop();
       if (!filename) {
         return { message: 'Некорректный URL.', code: 400 };
       }
 
-      // Ищем файл в базе данных по имени
-      const file = await this.fileRepository.findOne({ where: { filename } });
+      const file = await this.fileRepository.findOne({ where: { filename, offerId } });
       if (!file) {
         return { message: 'Файл не найден.', code: 404 };
       }
 
-      // Удаляем файл из файловой системы
       await unlink(file.path);
 
-      // Удаляем запись из базы данных
       await this.fileRepository.delete(file.id);
+
+      const offer = await this.offerRepository.findOne({ where: { id: offerId } });
+      if (offer) {
+        offer.imageUrls = offer.imageUrls.filter(imageUrl => imageUrl !== url);
+        await this.offerRepository.save(offer);
+      }
 
       return { message: 'Файл успешно удалён.', code: 200 };
     } catch (error) {

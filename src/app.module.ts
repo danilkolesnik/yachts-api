@@ -30,13 +30,16 @@ import { join } from 'path';
       ],
       useFactory:() =>({
         type:"postgres",
-        host:"localhost",
+        host:"ep-twilight-sun-a2y5dnis.eu-central-1.pg.koyeb.app",
         port:5432,
-        username:"postgres",
-        password:"12345678",
-        database:"yachts",
+        username:"koyeb-adm",
+        password:"npg_HN76ryMJUTiK",
+        database:"koyebdb",
         synchronize:true,
-        entities: [__dirname + '/**/*.entity{.js, .ts}']
+        entities: [__dirname + '/**/*.entity{.js, .ts}'],
+        ssl: {
+          rejectUnauthorized: false,
+        },
       })
     }),
     AuthModule, 
