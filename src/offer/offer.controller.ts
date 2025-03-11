@@ -1,7 +1,7 @@
-import { Controller, Post, Put, Body, Param,Get } from '@nestjs/common';
+import { Controller, Post, Put, Body, Param,Get, Req } from '@nestjs/common';
 import { OfferService } from './offer.service';
 import { CreateOfferhDto } from './dto/create-offer.dto';
-
+import { Request } from 'express';
 @Controller('offer')
 export class OfferController {
   constructor(private readonly offerService: OfferService) {}
@@ -32,7 +32,7 @@ export class OfferController {
   }
 
   @Get()
-  async getAllOffers() {
-    return this.offerService.findAll();
+  async getAllOffers(@Req() request: Request) {
+    return this.offerService.findAll(request);
   }
 }

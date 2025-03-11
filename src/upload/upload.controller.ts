@@ -17,36 +17,43 @@ export class UploadController {
     private readonly offerRepository: Repository<offer>,
   ) {}
 
-  @Post('delete')
-  async deleteFile(@Body() body: { url: string; offerId: string }) {
-    const { url, offerId } = body;
-    console.log(url, offerId);
-    try {
-      const filename = url.split('/').pop();
-      if (!filename) {
-        return { message: 'Некорректный URL.', code: 400 };
-      }
-
-      const file = await this.fileRepository.findOne({ where: { filename, offerId } });
-      if (!file) {
-        return { message: 'Файл не найден.', code: 404 };
-      }
-
-      await unlink(file.path);
-
-      await this.fileRepository.delete(file.id);
-
-      const offer = await this.offerRepository.findOne({ where: { id: offerId } });
-      if (offer) {
-        offer.imageUrls = offer.imageUrls.filter(imageUrl => imageUrl !== url);
-        await this.offerRepository.save(offer);
-      }
-
-      return { message: 'Файл успешно удалён.', code: 200 };
-    } catch (error) {
-      return { message: 'Ошибка при удалении файла.', code: 500, error: error.message };
+@Post('delete')
+async deleteFile(@Body() body: { url: string; offerId: string }) {
+  const { url, offerId } = body;
+  try {
+    const filename = url.split('/').pop();
+    if (!filename) {
+      return { message: 'Некорректный URL.', code: 400 };
     }
+
+    const file = await this.fileRepository.findOne({ where: { filename, offerId } });
+    if (!file) {
+      return { message: 'Файл не найден.', code: 404 };
+    }
+
+    await unlink(file.path);
+
+    await this.fileRepository.delete(file.id);
+
+    const offer = await this.offerRepository.findOne({ where: { id: offerId } });
+    if (offer) {
+      const isImage = file.mimetype.startsWith('image/');
+      const isVideo = file.mimetype.startsWith('video/');
+
+      if (isImage) {
+        offer.imageUrls = offer.imageUrls.filter(imageUrl => imageUrl !== url);
+      } else if (isVideo) {
+        offer.videoUrls = offer.videoUrls.filter(videoUrl => videoUrl !== url);
+      }
+
+      await this.offerRepository.save(offer);
+    }
+
+    return { message: 'Файл успешно удалён.', code: 200 };
+  } catch (error) {
+    return { message: 'Ошибка при удалении файла.', code: 500, error: error.message };
   }
+}
 
   @Post(':offerId')
   @UseInterceptors(FileInterceptor('file', {
@@ -91,9 +98,14 @@ export class UploadController {
       folder = 'uploads/video';
     }
 
-    const fileUrl = `https://yachts-04397ed45b09.herokuapp.com/${folder}/${file.filename}`;
+    const fileUrl = `http://localhost:3002/${folder}/${file.filename}`;
 
-    offer.imageUrls = offer.imageUrls ? [...offer.imageUrls, fileUrl] : [fileUrl];
+    if (isImage) {
+      offer.imageUrls = offer.imageUrls ? [...offer.imageUrls, fileUrl] : [fileUrl];
+    } else if (isVideo) {
+      offer.videoUrls = offer.videoUrls ? [...offer.videoUrls, fileUrl] : [fileUrl];
+    }
+
     await this.offerRepository.save(offer);
 
     const newFile = this.fileRepository.create({
@@ -115,7 +127,7 @@ export class UploadController {
       return { message: 'Файл не найден.' };
     }
 
-    const fileUrl = `https://yachts-04397ed45b09.herokuapp.com/uploads/${file.filename}`;
+    const fileUrl = `http://localhost:3002/uploads/${file.filename}`;
 
     return {
       id: file.id,

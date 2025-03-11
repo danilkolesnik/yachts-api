@@ -10,10 +10,16 @@ export class UsersController {
     return this.usersService.allUsers();
   }
 
+  @Get('role/worker')
+  async getWorkers() {
+    return this.usersService.findAllUsersExcludingRoles();
+  }
+
   @Get('role/user')
   async getUsersWithRoleUser() {
-    return this.usersService.findAllUsersWithRoleUser();
+    return this.usersService.findAllUsers();
   }
+
 
   @Put(':id/role')
   async updateUserRole(

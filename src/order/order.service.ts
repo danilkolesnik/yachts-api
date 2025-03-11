@@ -6,10 +6,12 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { offer } from 'src/offer/entities/offer.entity';
 import { users } from 'src/auth/entities/users.entity';
 import { order } from './entities/order.entity';
+import { File } from 'src/upload/entities/file.entity';
 import getBearerToken from 'src/methods/getBearerToken';
 
 import { JwtPayload } from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
+import { unlink } from 'fs/promises';
 
 @Injectable()
 export class OrderService {
@@ -20,6 +22,8 @@ export class OrderService {
     private readonly usersRepository: Repository<users>,
     @InjectRepository(order)
     private readonly orderRepository: Repository<order>,
+    @InjectRepository(File)
+    private readonly fileRepository: Repository<File>,
   ) {}
 
   async create(data: CreateOrderDto) {
@@ -223,4 +227,99 @@ export class OrderService {
       };
     }
   }
+
+  async uploadFileToOrder(orderId: string, file: Express.Multer.File, tab: string): Promise<any> {
+    if (!file) {
+      return { message: 'Файл не загружен.' };
+    }
+
+    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    if (!order) {
+      return { message: 'Order не найден.' };
+    }
+
+    const isImage = file.mimetype.startsWith('image/');
+    const isVideo = file.mimetype.startsWith('video/');
+    let folder = 'uploads'; 
+
+    if (isImage) {
+      folder = 'uploads/image';
+    } else if (isVideo) {
+      folder = 'uploads/video';
+    }
+
+    const fileUrl = `http://localhost:3002/${folder}/${file.filename}`;
+    
+    console.log(tab);
+
+    if (tab === 'process') {
+      if (isImage) {
+        order.processImageUrls = order.processImageUrls ? [...order.processImageUrls, fileUrl] : [fileUrl];
+      } else if (isVideo) {
+        order.processVideoUrls = order.processVideoUrls ? [...order.processVideoUrls, fileUrl] : [fileUrl];
+      }
+    } else if (tab === 'result') {
+      if (isImage) {
+        order.resultImageUrls = order.resultImageUrls ? [...order.resultImageUrls, fileUrl] : [fileUrl];
+      } else if (isVideo) {
+        order.resultVideoUrls = order.resultVideoUrls ? [...order.resultVideoUrls, fileUrl] : [fileUrl];
+      }
+    } else if (tab === 'tab') {
+      if (isImage) {
+        order.tabImageUrls = order.tabImageUrls ? [...order.tabImageUrls, fileUrl] : [fileUrl];
+      } else if (isVideo) {
+        order.tabVideoUrls = order.tabVideoUrls ? [...order.tabVideoUrls, fileUrl] : [fileUrl];
+      }
+    }
+
+    await this.orderRepository.save(order);
+
+    const newFile = this.fileRepository.create({
+      filename: file.filename,
+      path: file.path,
+      mimetype: file.mimetype,
+      offerId: order.offerId,
+    });
+
+    await this.fileRepository.save(newFile);
+
+    return { message: 'Файл успешно загружен.', code: 200, file: newFile };
+  }
+
+  async deleteFileFromOrder(orderId: string, fileUrl: string, tab: string): Promise<{ message: string; code: number }> {
+    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    if (!order) {
+      return { message: 'Order не найден.', code: 404 };
+    }
+
+  
+    const filename = fileUrl.split('/').pop();
+    if (!filename) {
+      return { message: 'Некорректный URL.', code: 400 };
+    }
+
+    const file = await this.fileRepository.findOne({ where: { filename, offerId: order.offerId } });
+    if (!file) {
+      return { message: 'Файл не найден.', code: 404 };
+    }
+
+    await unlink(file.path);
+    await this.fileRepository.delete(file.id);
+
+    if (tab === 'process') {
+      order.processImageUrls = order.processImageUrls ? order.processImageUrls.filter(url => url !== fileUrl) : [];
+      order.processVideoUrls = order.processVideoUrls ? order.processVideoUrls.filter(url => url !== fileUrl) : [];
+    } else if (tab === 'result') {
+      order.resultImageUrls = order.resultImageUrls ? order.resultImageUrls.filter(url => url !== fileUrl) : [];
+      order.resultVideoUrls = order.resultVideoUrls ? order.resultVideoUrls.filter(url => url !== fileUrl) : [];
+    } else if (tab === 'tab') {
+      order.tabImageUrls = order.tabImageUrls ? order.tabImageUrls.filter(url => url !== fileUrl) : [];
+      order.tabVideoUrls = order.tabVideoUrls ? order.tabVideoUrls.filter(url => url !== fileUrl) : [];
+    }
+
+    await this.orderRepository.save(order);
+
+    return { message: 'Файл успешно удалён.', code: 200 };
+  }
+
 }

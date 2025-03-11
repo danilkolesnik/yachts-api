@@ -3,10 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { offer } from './entities/offer.entity';
 import { CreateOfferhDto } from './dto/create-offer.dto';
+import { Request } from 'express';
 import generateRandomId from 'src/methods/generateRandomId';
 import { users } from 'src/auth/entities/users.entity';
 import { OfferHistory } from './entities/offer-history.entity';
 import { isEqual } from 'lodash';
+
+import getBearerToken from 'src/methods/getBearerToken';
+import { JwtPayload } from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
+
 
 @Injectable()
 export class OfferService {
@@ -125,9 +131,23 @@ export class OfferService {
     }
   }
 
-  async findAll() {
+  async findAll(req: Request) {
+    const token = getBearerToken(req);
     try {
-      const offers = await this.offerRepository.find();
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+
+      let offers;
+      if (login.role === 'user') {
+        offers = await this.offerRepository.find({
+          where: { customerId: login.id },
+          order: { createdAt: 'DESC' },
+        });
+      } else {
+        offers = await this.offerRepository.find({
+          order: { createdAt: 'DESC' },
+        });
+      }
+  
       return {
         code: 200,
         data: offers,

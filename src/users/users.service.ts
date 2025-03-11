@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository,Not, In } from 'typeorm';
 import { users } from 'src/auth/entities/users.entity';
 
 @Injectable()
@@ -25,14 +25,35 @@ export class UsersService {
     }
   }
 
-  async findAllUsersWithRoleUser() {
+  async findAllUsersExcludingRoles() {
     try {
-      const usersWithRoleUser = await this.usersRepository.find({
-        where: { role: 'user' },
+      const usersExcludingRoles = await this.usersRepository.find({
+        where: {
+          role: Not(In(['user', 'admin'])),
+        },
       });
       return {
         code: 200,
-        data: usersWithRoleUser,
+        data: usersExcludingRoles,
+      };
+    } catch (err) {
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  async findAllUsers() {
+    try {
+      const usersExcludingRoles = await this.usersRepository.find({
+        where: {
+          role: 'user',
+        },
+      });
+      return {
+        code: 200,
+        data: usersExcludingRoles,
       };
     } catch (err) {
       return {
