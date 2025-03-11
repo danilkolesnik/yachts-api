@@ -13,7 +13,6 @@ import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
 
-
 @Injectable()
 export class OfferService {
   constructor(

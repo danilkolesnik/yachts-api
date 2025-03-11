@@ -98,7 +98,7 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
       folder = 'uploads/video';
     }
 
-    const fileUrl = `http://localhost:3002/${folder}/${file.filename}`;
+    const fileUrl = `${process.env.SERVER_URL}/${folder}/${file.filename}`;
 
     if (isImage) {
       offer.imageUrls = offer.imageUrls ? [...offer.imageUrls, fileUrl] : [fileUrl];
@@ -127,7 +127,7 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
       return { message: 'Файл не найден.' };
     }
 
-    const fileUrl = `http://localhost:3002/uploads/${file.filename}`;
+    const fileUrl = `${process.env.SERVER_URL}/${file.filename}`;
 
     return {
       id: file.id,
